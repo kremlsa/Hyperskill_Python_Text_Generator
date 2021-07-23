@@ -11,45 +11,45 @@ def load_text(file_name_):
         return file_.read()
 
 
-def sentence_generator(word_):
-    word_ = word_.strip()
+def find_word(dict_):
+    freq_counter_ = Counter(dict_)
+    list_freq_ = freq_counter_.most_common()
+    words_ = [x[0] for x in list_freq_]
+    weights_ = [x[1] for x in list_freq_]
+    if len(words_) == 0:
+        return ""
+    return random.choices(words_, weights_)[0]
+
+
+def sentence_generator():
     global trigrams_dict
-    sent_ = []
+    sentence_ = []
     first_word = True
-    counter_ = 0
-    is_ok = False
     while True:
-        if is_ok:
-            break
-        freq_counter_ = Counter(trigrams_dict[word_])
-        list_freq_ = freq_counter_.most_common()
-        words_ = [x[0] for x in list_freq_]
-        weights_ = [x[1] for x in list_freq_]
         if first_word:
-            while True:
-                # next_word_ = random.choices(words_, weights=weights_, k=1)
-                next_word_ = words_[0]
-                if next_word_[0].isupper() and next_word_[-1].isalpha():
-                    first_word = False
-                    break
-                del words_[0]
-                # del weights_[0]
-        # elif counter_ >= 4:
-        elif counter_ >= 4:
-            # next_word_ = random.choices(words_, weights=weights_, k=1)
-            next_word_ = words_[0]
-            if next_word_[-1] in [".", "?", "!"]:
-            # if next_word_[0][-1] in [".", "?", "!"]:
-                is_ok = True
+            word_ = random.choice(list(trigrams_dict.keys()))
+            if word_ == "":
+                continue
+            if word_[0].isupper() and word_.split()[0][-1] not in ['.', '!', '?']:
+                sentence_.append(word_.split()[0])
+                sentence_.append(word_.split()[1])
+                first_word = False
         else:
-            # next_word_ = random.choices(words_, weights=weights_, k=1)
-            next_word_ = words_[0]
-        # sent_.append(next_word_[0])
-        sent_.append(next_word_)
-        # word_ = next_word_[0]
-        word_ = word_.split()[1] + " " + next_word_
-        counter_ += 1
-    return sent_
+            next_ = sentence_[-2] + " " + sentence_[-1]
+            word_ = find_word(trigrams_dict[next_])
+            if word_ == "":
+                continue
+            if word_[-1] in ['.', '!', '?'] and len(sentence_) >= 4:
+                sentence_.append(word_)
+                break
+            elif word_[-1] in ['.', '!', '?']:
+                sentence_ = []
+                first_word = True
+            elif word_ != "":
+                sentence_.append(word_)
+            else:
+                continue
+    return sentence_
 
 
 text = load_text(input())
@@ -60,16 +60,7 @@ trigrams = list(nltk.trigrams(tokens))
 trigrams_dict = {}
 for a, b, c in nltk.trigrams(tokens):
     trigrams_dict.setdefault(a + " " + b, []).append(c)
-
-start_word = random.choice(list(trigrams_dict.items()))
-
-start_word = start_word[0].split()[1] + " " + start_word[1][0]
-# print(start_word)
-# print(trigrams_dict.get(start_word))
-# freq_counter_ = Counter(trigrams_dict[start_word])
-# print(freq_counter_)
 for x in range(10):
-    sentence = sentence_generator(start_word)
+    sentence = sentence_generator()
     print(" ".join(sentence))
     x += 1
-    start_word = sentence[-2] + " " + sentence[-1]
